@@ -1,0 +1,83 @@
+{% capture video_capture %}
+	{% comment %}
+		Video Thumbnail Generator
+
+		Using: {% include 'video_thumbnail' video: section.video, size: 'full' %}
+	{% endcomment %}
+	{% assign video_iframe_url = '' %}
+	{% assign video_capture_index = video_capture_index | plus: 1 | default: 1 %}
+	{% assign video = video_thumbnail | default: video %}
+	{% assign size = size | default: 'thumbnail' %}
+	{% assign video_image_tag = true %}
+	{% assign video_link_start = '<a href="|URL|">' %}
+	{% assign video_link_end = '</a>' %}
+
+	{% if video.type == 'youtube' %}
+		{% assign youtubbe_url = 'https://img.youtube.com/vi/' | append: video.id %}
+
+		{% case size %}
+			{% when 'small' %}
+				{% assign youtubbe_url = youtubbe_url | append: '/default.jpg' %}
+			{% when 'medium' %}
+				{% assign youtubbe_url = youtubbe_url | append: '/mqdefault.jpg' %}
+			{% when 'high' %}
+				{% assign youtubbe_url = youtubbe_url | append: '/hqdefault.jpg' %}
+			{% when 'full' %}
+				{% assign youtubbe_url = youtubbe_url | append: '/maxresdefault.jpg' %}
+			{% else %}
+				{% assign youtubbe_url = youtubbe_url | append: '/default.jpg' %}
+		{% endcase %}
+
+		{% assign video_image = youtubbe_url | img_tag %}
+		{% assign video_image = video_image | prepend: '|LINK_START|' | append: '|LINK_END|' %}
+
+		{% assign video_url = 'https://www.youtube.com/watch?v=|ID|' | replace: '|ID|', video.id %}
+		{% assign video_iframe_url = 'https://www.youtube.com/embed/|ID|' | replace: '|ID|', video.id %}
+
+	{% elsif video.type == 'vimeo' %}
+		{% assign video_image_tag = false %}
+
+		{% capture vimeo_placeholder %}
+			{% case size %}
+				{% when 'small' %}
+					{% assign vimeo_size = 'thumbnail_small' %}
+				{% when 'medium' %}
+					{% assign vimeo_size = 'thumbnail_medium' %}
+				{% when 'high' %}
+					{% assign vimeo_size = 'thumbnail_large' %}
+				{% when 'full' %}
+					{% assign vimeo_size = 'thumbnail_large' %}
+				{% else %}
+					{% assign vimeo_size = 'thumbnail_small' %}
+			{% endcase %}
+
+			<script>
+				function vimeoThumbnail_{{ video_capture_index }}(data){
+					document.addEventListener("DOMContentLoaded", function(event) {
+						var image = document.createElement('img');
+						var placeholder = document.getElementById('vimeo-{{ video_capture_index }}');
+
+						image.src = data[0]['{{ vimeo_size }}'];
+
+						placeholder.appendChild(image);
+					}, { once: true });
+				}
+			</script>
+			<script src="http://vimeo.com/api/v2/video/{{ video.id }}.json?callback=vimeoThumbnail_{{ video_capture_index }}"></script>
+
+			|LINK_START|<span id="vimeo-{{ video_capture_index }}" class="video-image" ></span>|LINK_END|
+		{% endcapture %}
+
+		{% assign video_image = vimeo_placeholder %}
+		{% assign video_url = 'https://vimeo.com/|ID|' | replace: '|ID|', video.id %}
+		{% assign video_iframe_url = 'https://player.vimeo.com/video/|ID|' | replace: '|ID|', video.id %}
+	{% endif %}
+
+	{% if link == 'iframe' %}
+		{% assign video_image = video_image | replace: '|LINK_START|', video_link_start | replace: '|LINK_END|', video_link_end | replace: '|URL|', video_iframe_url %}
+	{% elsif link == 'video' %}
+		{% assign video_image = video_image | replace: '|LINK_START|', video_link_start | replace: '|LINK_END|', video_link_end | replace: '|URL|', video_url %}
+	{% else %}
+		{% assign video_image = video_image | replace: '|LINK_START|', '' | replace: '|LINK_END|', '' %}
+	{% endif %}
+{% endcapture %}{{- video_image -}}
