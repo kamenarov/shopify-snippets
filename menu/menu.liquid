@@ -1,0 +1,47 @@
+{% assign class_current = 'current-menu-item' %}
+{% assign class_has_children = 'menu-item-has-children' %}
+{% assign handle = menu_handle | downcase %}
+{% assign linklist_links = linklists[handle].links %}
+
+{% unless links == blank %}
+	{% assign linklist_links = links %}
+{% endunless %}
+
+{% if linklist_links.size > 0 %}
+	{% if sub_menu %}
+		<ul class="sub-menu">
+	{% else %}
+		<ul class="menu {{ class }}">
+	{% endif %}
+		{% for link in linklist_links %}
+			{% assign sub_menu_handle = link.title | replace: ' ', '-' | downcase %}
+
+			{% if sub_menu %}
+				{% assign current_handle = handle | append: '-' | append: sub_menu_handle %}
+			{% elsif prefix != blank %}
+				{% assign current_handle = prefix | append: '-' | append: sub_menu_handle %}
+			{% else %}
+				{% assign current_handle = sub_menu_handle %}
+			{% endif %}
+
+			{% assign link_classes = '' %}
+			{% if link.active %}
+				{% assign link_classes = link_classes | prepend: class_current | prepend: ' ' %}
+			{% endif %}
+
+			{% if linklists[current_handle] != empty or link.links.size > 0 %}
+				{% assign link_classes = link_classes | prepend: class_has_children | prepend: ' ' %}
+			{% endif %}
+
+			<li{% if link_classes != empty %} class="{{ link_classes | replace_first: ' ', '' }}"{% endif %}>
+				<a href="{{ link.url }}">{{ link.title }}</a>
+
+				{% if linklists[current_handle] != blank or link.links.size > 0 %}
+					{% include 'menu', handle: current_handle, sub_menu: true, links: link.links %}
+				{% endif %}
+			</li>
+		{% endfor %}
+	</ul>
+	{% assign links = false %}
+{% endif %}
+{% assign class = '' %}
